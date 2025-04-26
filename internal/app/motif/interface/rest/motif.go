@@ -4,6 +4,7 @@ import (
 	"batikin-be/internal/app/motif/usecase"
 	"batikin-be/internal/domain/dto"
 	"batikin-be/internal/infra/validator"
+	"batikin-be/internal/middleware"
 	"batikin-be/internal/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +22,7 @@ func NewMotifHandler(
 ) {
 	handler := MotifHandler{authUsecase, validator}
 
-	router.Post("/motif", handler.CreateMotif)
+	router.Post("/motif", middleware.Authenticated, handler.CreateMotif)
 }
 
 func (h *MotifHandler) CreateMotif(ctx *fiber.Ctx) error {

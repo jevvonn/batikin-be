@@ -20,6 +20,10 @@ type Config struct {
 	JWTSecret string `env:"JWT_SECRET,required"`
 
 	OPENAIAPIKey string `env:"OPENAI_API_KEY,required"`
+	GeminiAPIKey string `env:"GEMINI_API_KEY,required"`
+
+	SupabaseURL  string `env:"SUPABASE_PROJECT_URL,required"`
+	SupbaseToken string `env:"SUPABASE_PROJECT_TOKEN,required"`
 }
 
 var cfg Config

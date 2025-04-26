@@ -4,6 +4,8 @@ import (
 	"batikin-be/internal/app/motif/repository"
 	"batikin-be/internal/domain/dto"
 	"batikin-be/internal/domain/entity"
+	"batikin-be/internal/infra/generation"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -42,30 +44,26 @@ func (u *MotifUsecase) GetSpecific(ctx *fiber.Ctx) (entity.Motif, error) {
 }
 
 func (u *MotifUsecase) Create(ctx *fiber.Ctx, req dto.CreateMotifRequest) (entity.Motif, error) {
+	userId := ctx.Locals("userId").(string)
 	motif := entity.Motif{
 		Name:   req.Name,
 		Prompt: req.Prompt,
+		UserID: uuid.MustParse(userId),
 	}
 
-	prompt := `
-		Generate a highly detailed, seamless, tileable batik pattern, designed for repeating across a surface without visible edges based on the prompt below.
+	prompt := fmt.Sprintf(`generate an image batik pattern with size of 1024x1024 based on this description :
 
-		Prompt: ungu dengan bunga mawar yang mekar.
-	`
+		%s
+
+		The image should be a seamless batik pattern
+	`, req.Prompt)
 
 	// Generate image
-	imageResponse, err := u.openaiClient.Images.Generate(ctx.Context(), openai.ImageGenerateParams{
-		Prompt:  prompt,
-		N:       openai.Int(1),
-		Model:   "gpt-image-1",
-		Quality: "medium",
-	})
-
+	url, err := generation.GenerateImage(prompt)
 	if err != nil {
 		return entity.Motif{}, err
 	}
-
-	motif.ImageURL = imageResponse.Data[0].URL
+	motif.ImageURL = url
 
 	err = u.motifRepository.Create(&motif)
 	if err != nil {

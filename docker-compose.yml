@@ -5,6 +5,7 @@ services:
     environment:
       - APP_ENV=production
       - APP_PORT=4001
+      - DB_HOST=batikkin-db
     depends_on:
       - db
     ports:

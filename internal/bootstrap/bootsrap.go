@@ -9,13 +9,16 @@ import (
 
 	authHandler "batikin-be/internal/app/auth/interface/rest"
 	motifHandler "batikin-be/internal/app/motif/interface/rest"
+	orderHandler "batikin-be/internal/app/order/interface/rest"
 	productHandler "batikin-be/internal/app/product/interface/rest"
 
 	authUsecase "batikin-be/internal/app/auth/usecase"
 	motifUsecase "batikin-be/internal/app/motif/usecase"
+	orderUsecase "batikin-be/internal/app/order/usecase"
 	productUsecase "batikin-be/internal/app/product/usecase"
 
 	motifRepository "batikin-be/internal/app/motif/repository"
+	orderRepository "batikin-be/internal/app/order/repository"
 	productRepository "batikin-be/internal/app/product/repository"
 	userRepository "batikin-be/internal/app/user/repository"
 
@@ -53,14 +56,17 @@ func Start() error {
 	userR := userRepository.NewUserPostgreSQL(db)
 	motifR := motifRepository.NewMotifPostgreSQL(db)
 	productR := productRepository.NewProductPostgreSQL(db)
+	orderR := orderRepository.NewOrderPostgreSQL(db)
 
 	authU := authUsecase.NewAuthUsecase(userR)
 	motifU := motifUsecase.NewMotifUsecase(motifR, openAIClient)
 	productU := productUsecase.NewProductUsecase(productR, motifR)
+	orderU := orderUsecase.NewOrderUsecase(orderR, productR)
 
 	authHandler.NewAuthHandler(apiRouter, authU, validator)
 	motifHandler.NewMotifHandler(apiRouter, motifU, validator)
 	productHandler.NewProductHandler(apiRouter, productU, validator)
+	orderHandler.NewOrderHandler(apiRouter, orderU, validator)
 
 	addr := fmt.Sprintf("localhost:%s", conf.AppPort)
 	if conf.AppEnv == "production" {

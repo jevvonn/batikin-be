@@ -18,3 +18,18 @@ var CLOTH_SIZE = []SizeVariant{
 	{Size: "XL", Price: 150000},
 	{Size: "XXL", Price: 160000},
 }
+
+const (
+	OrderPending  = "pending"
+	OrderProcess  = "proses"
+	OrderShipped  = "dikirim"
+	OrderDone     = "selesai"
+	OrderCanceled = "dibatalkan"
+)
+
+const (
+	TransactionPending  = "pending"
+	TransactionProcess  = "proses"
+	TransactionDone     = "selesai"
+	TransactionCanceled = "dibatalkan"
+)

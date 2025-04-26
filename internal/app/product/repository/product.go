@@ -28,7 +28,7 @@ func (r *ProductPostgreSQL) GetAll() ([]entity.Product, error) {
 
 func (r *ProductPostgreSQL) GetSpecific(product entity.Product) (entity.Product, error) {
 	var result entity.Product
-	err := r.db.Preload("Sizes").First(&result, &product).Error
+	err := r.db.Debug().Preload("Sizes").First(&result, &product).Error
 	return result, err
 }
 

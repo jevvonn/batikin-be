@@ -6,6 +6,7 @@ import (
 	"batikin-be/internal/domain/entity"
 	"batikin-be/internal/infra/generation"
 	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -45,8 +46,7 @@ func (u *MotifUsecase) GetSpecific(ctx *fiber.Ctx) (entity.Motif, error) {
 
 func (u *MotifUsecase) Create(ctx *fiber.Ctx, req dto.CreateMotifRequest) (entity.Motif, error) {
 	userId := ctx.Locals("userId").(string)
-	motif := entity.Motif{
-		Name:   req.Name,
+	motif := &entity.Motif{
 		Prompt: req.Prompt,
 		UserID: uuid.MustParse(userId),
 	}
@@ -65,12 +65,30 @@ func (u *MotifUsecase) Create(ctx *fiber.Ctx, req dto.CreateMotifRequest) (entit
 	}
 	motif.ImageURL = url
 
-	err = u.motifRepository.Create(&motif)
+	if req.Name == "" {
+		prompt = fmt.Sprintf(`generate a single title without any description for this batik pattern based on this description : %s`, req.Prompt)
+
+		chatCompletion, err := u.openaiClient.Chat.Completions.New(ctx.Context(), openai.ChatCompletionNewParams{
+			Messages: []openai.ChatCompletionMessageParamUnion{
+				openai.UserMessage(prompt),
+			},
+			Model: openai.ChatModelGPT4o,
+		})
+		if err != nil {
+			return entity.Motif{}, err
+		}
+
+		motif.Name = strings.ReplaceAll(chatCompletion.Choices[0].Message.Content, "\"", "")
+	} else {
+		motif.Name = req.Name
+	}
+
+	err = u.motifRepository.Create(motif)
 	if err != nil {
 		return entity.Motif{}, err
 	}
 
-	response, err := u.motifRepository.GetSpecific(motif)
+	response, err := u.motifRepository.GetSpecific(*motif)
 	if err != nil {
 		return entity.Motif{}, err
 	}

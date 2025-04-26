@@ -22,7 +22,27 @@ func NewMotifHandler(
 ) {
 	handler := MotifHandler{authUsecase, validator}
 
+	router.Get("/motif", handler.GetAllMotif)
 	router.Post("/motif", middleware.Authenticated, handler.CreateMotif)
+}
+
+func (h *MotifHandler) GetAllMotif(ctx *fiber.Ctx) error {
+	motifs, err := h.authUsecase.GetAll()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(
+			models.JSONResponseModel{
+				Message: "Invalid Request",
+				Errors:  err.Error(),
+			},
+		)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(
+		models.JSONResponseModel{
+			Message: "Success",
+			Data:    motifs,
+		},
+	)
 }
 
 func (h *MotifHandler) CreateMotif(ctx *fiber.Ctx) error {

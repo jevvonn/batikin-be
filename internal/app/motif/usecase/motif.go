@@ -1,13 +1,18 @@
 package usecase
 
 import (
+	"batikin-be/config"
 	"batikin-be/internal/app/motif/repository"
 	"batikin-be/internal/domain/dto"
 	"batikin-be/internal/domain/entity"
 	"batikin-be/internal/infra/generation"
 	"batikin-be/internal/infra/supabase"
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -114,6 +119,7 @@ func (u *MotifUsecase) Capture(ctx *fiber.Ctx) (dto.CaptureMotifResponse, error)
 	if err != nil {
 		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to open file")
 	}
+	defer fileData.Close()
 
 	data, err := io.ReadAll(fileData)
 	if err != nil {
@@ -130,7 +136,90 @@ func (u *MotifUsecase) Capture(ctx *fiber.Ctx) (dto.CaptureMotifResponse, error)
 		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to upload file")
 	}
 
+	err = os.Remove(path)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to remove file")
+	}
+
+	// Get roboflow
+	conf := config.Load()
+	reqBody := map[string]interface{}{
+		"api_key": conf.RoboflowAPIKey,
+		"inputs": map[string]interface{}{
+			"image": map[string]interface{}{
+				"type":  "url",
+				"value": url,
+			},
+		},
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to encode json")
+	}
+
+	apiURL := "https://serverless.roboflow.com/infer/workflows/batikkin/detect-and-classify"
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to create request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to send request")
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to read response")
+	}
+
+	var result struct {
+		Outputs []struct {
+			OutputImage struct {
+				Type  string `json:"type"`
+				Value string `json:"value"`
+			} `json:"output_image"`
+		} `json:"outputs"`
+	}
+
+	err = json.Unmarshal(responseBody, &result)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to unmarshal response")
+	}
+
+	if len(result.Outputs) == 0 {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("no outputs found")
+	}
+
+	imageData, err := base64.StdEncoding.DecodeString(result.Outputs[0].OutputImage.Value)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to decode base64 image")
+	}
+
+	uniqueFileName = uuid.New().String() + ".png"
+	path = "./tmp/" + uniqueFileName
+
+	err = os.WriteFile(path, imageData, os.ModePerm)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to write file")
+	}
+
+	publicUrl, err := supabase.UploadImage("scoring", uniqueFileName, path)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to upload file")
+	}
+
+	err = os.Remove(path)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to remove file")
+	}
+
 	return dto.CaptureMotifResponse{
-		ImageURL: url,
+		ImageURL: publicUrl,
 	}, nil
 }

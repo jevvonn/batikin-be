@@ -26,6 +26,7 @@ type Config struct {
 	SupbaseToken string `env:"SUPABASE_PROJECT_TOKEN,required"`
 
 	MidtransServerKey string `env:"MIDTRANS_SERVER_KEY,required"`
+	RoboflowAPIKey    string `env:"ROBOFLOW_API_KEY,required"`
 }
 
 var cfg Config

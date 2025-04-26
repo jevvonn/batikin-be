@@ -9,11 +9,14 @@ import (
 
 	authHandler "batikin-be/internal/app/auth/interface/rest"
 	motifHandler "batikin-be/internal/app/motif/interface/rest"
+	productHandler "batikin-be/internal/app/product/interface/rest"
 
 	authUsecase "batikin-be/internal/app/auth/usecase"
 	motifUsecase "batikin-be/internal/app/motif/usecase"
+	productUsecase "batikin-be/internal/app/product/usecase"
 
 	motifRepository "batikin-be/internal/app/motif/repository"
+	productRepository "batikin-be/internal/app/product/repository"
 	userRepository "batikin-be/internal/app/user/repository"
 
 	"github.com/gofiber/fiber/v2"
@@ -49,12 +52,15 @@ func Start() error {
 
 	userR := userRepository.NewUserPostgreSQL(db)
 	motifR := motifRepository.NewMotifPostgreSQL(db)
+	productR := productRepository.NewProductPostgreSQL(db)
 
 	authU := authUsecase.NewAuthUsecase(userR)
 	motifU := motifUsecase.NewMotifUsecase(motifR, openAIClient)
+	productU := productUsecase.NewProductUsecase(productR, motifR)
 
 	authHandler.NewAuthHandler(apiRouter, authU, validator)
 	motifHandler.NewMotifHandler(apiRouter, motifU, validator)
+	productHandler.NewProductHandler(apiRouter, productU, validator)
 
 	addr := fmt.Sprintf("localhost:%s", conf.AppPort)
 	if conf.AppEnv == "production" {

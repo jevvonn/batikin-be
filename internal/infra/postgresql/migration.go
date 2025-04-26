@@ -11,6 +11,8 @@ func Migrate(db *gorm.DB, command string) {
 	tables := []any{
 		&entity.User{},
 		&entity.Motif{},
+		&entity.Product{},
+		&entity.ProductSizeVariant{},
 	}
 
 	var err error

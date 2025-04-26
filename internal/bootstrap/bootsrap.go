@@ -20,10 +20,12 @@ func Start() error {
 		conf.DbPassword,
 		conf.DbName,
 	)
-	_, err := postgresql.New(dsn)
+	db, err := postgresql.New(dsn)
 	if err != nil {
 		panic(err)
 	}
+
+	CommandHandler(db)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Your API is running")

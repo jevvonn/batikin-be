@@ -10,6 +10,7 @@ func Migrate(db *gorm.DB, command string) {
 	migrator := db.Migrator()
 	tables := []any{
 		&entity.User{},
+		&entity.Motif{},
 	}
 
 	var err error

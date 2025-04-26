@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
 	"math/rand"
 	"mime/multipart"
 	"net/http"
@@ -30,6 +32,13 @@ func RandomNumber(n int) string {
 
 func StringISOToDateTime(dateString string) (time.Time, error) {
 	return time.Parse(time.RFC3339, dateString)
+}
+
+func GenerateSignature(orderID, statusCode, grossAmount, serverKey string) string {
+	signature := orderID + statusCode + grossAmount + serverKey
+	hash := sha512.New()
+	hash.Write([]byte(signature))
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 func GetFileMimeType(file *multipart.FileHeader) (string, error) {

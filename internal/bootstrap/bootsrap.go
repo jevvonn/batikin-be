@@ -12,11 +12,13 @@ import (
 	motifHandler "batikin-be/internal/app/motif/interface/rest"
 	orderHandler "batikin-be/internal/app/order/interface/rest"
 	productHandler "batikin-be/internal/app/product/interface/rest"
+	transactionHandler "batikin-be/internal/app/transaction/interface/rest"
 
 	authUsecase "batikin-be/internal/app/auth/usecase"
 	motifUsecase "batikin-be/internal/app/motif/usecase"
 	orderUsecase "batikin-be/internal/app/order/usecase"
 	productUsecase "batikin-be/internal/app/product/usecase"
+	transactionUsecase "batikin-be/internal/app/transaction/usecase"
 
 	motifRepository "batikin-be/internal/app/motif/repository"
 	orderRepository "batikin-be/internal/app/order/repository"
@@ -66,11 +68,13 @@ func Start() error {
 	motifU := motifUsecase.NewMotifUsecase(motifR, openAIClient)
 	productU := productUsecase.NewProductUsecase(productR, motifR)
 	orderU := orderUsecase.NewOrderUsecase(orderR, productR, midtransClient, transactionR)
+	transactionU := transactionUsecase.NewTransactionUsecase(transactionR, orderR)
 
 	authHandler.NewAuthHandler(apiRouter, authU, validator)
 	motifHandler.NewMotifHandler(apiRouter, motifU, validator)
 	productHandler.NewProductHandler(apiRouter, productU, validator)
 	orderHandler.NewOrderHandler(apiRouter, orderU, validator)
+	transactionHandler.NewTransactionHandler(apiRouter, transactionU)
 
 	addr := fmt.Sprintf("localhost:%s", conf.AppPort)
 	if conf.AppEnv == "production" {

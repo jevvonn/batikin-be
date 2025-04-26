@@ -9,6 +9,7 @@ import (
 type TransactionPostgreSQLItf interface {
 	Create(transaction *entity.Transaction) error
 	GetSpecific(transaction entity.Transaction) (entity.Transaction, error)
+	Update(transaction *entity.Transaction) error
 }
 
 type TransactionPostgreSQL struct {
@@ -23,6 +24,10 @@ func (r *TransactionPostgreSQL) GetSpecific(transaction entity.Transaction) (ent
 	var result entity.Transaction
 	err := r.db.First(&result, &transaction).Error
 	return result, err
+}
+
+func (r *TransactionPostgreSQL) Update(transaction *entity.Transaction) error {
+	return r.db.Where("id = ?", transaction.ID).Updates(&transaction).Error
 }
 
 func (r *TransactionPostgreSQL) Create(transaction *entity.Transaction) error {

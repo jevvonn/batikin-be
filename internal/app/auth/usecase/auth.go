@@ -16,6 +16,7 @@ import (
 type AuthUsecaseItf interface {
 	Register(ctx *fiber.Ctx, req dto.RegisterRequest) error
 	Login(ctx *fiber.Ctx, req dto.LoginRequest) (dto.LoginResponse, error)
+	Session(ctx *fiber.Ctx) (dto.SessionResponse, error)
 }
 
 type AuthUsecase struct {
@@ -29,7 +30,6 @@ func NewAuthUsecase(
 }
 
 func (u *AuthUsecase) Register(ctx *fiber.Ctx, req dto.RegisterRequest) error {
-	// Check if username already exists
 	user, err := u.userRepo.GetSpecificUser(entity.User{
 		Email: req.Email,
 	})
@@ -63,7 +63,6 @@ func (u *AuthUsecase) Register(ctx *fiber.Ctx, req dto.RegisterRequest) error {
 }
 
 func (u *AuthUsecase) Login(ctx *fiber.Ctx, req dto.LoginRequest) (dto.LoginResponse, error) {
-	// Check if username exists
 	user, err := u.userRepo.GetSpecificUser(entity.User{
 		Email: req.Email,
 	})
@@ -76,11 +75,10 @@ func (u *AuthUsecase) Login(ctx *fiber.Ctx, req dto.LoginRequest) (dto.LoginResp
 		return dto.LoginResponse{}, errors.New("email or password is incorrect")
 	}
 
-	// Check password
 	if !helper.VerifyPassword(req.Password, user.Password) {
 		return dto.LoginResponse{}, errors.New("email or password is incorrect")
 	}
-	// Create Jwt token
+
 	token, err := jwt.CreateAuthToken(user.ID.String(), user.Email, user.Name)
 
 	if err != nil {
@@ -90,5 +88,27 @@ func (u *AuthUsecase) Login(ctx *fiber.Ctx, req dto.LoginRequest) (dto.LoginResp
 	return dto.LoginResponse{
 		UserId: user.ID.String(),
 		Token:  token,
+	}, nil
+}
+
+func (u *AuthUsecase) Session(ctx *fiber.Ctx) (dto.SessionResponse, error) {
+	userId := ctx.Locals("userId").(string)
+
+	uuidUser, err := uuid.Parse(userId)
+	if err != nil {
+		return dto.SessionResponse{}, err
+	}
+
+	user, err := u.userRepo.GetSpecificUser(entity.User{
+		ID: uuidUser,
+	})
+	if err != nil {
+		return dto.SessionResponse{}, err
+	}
+
+	return dto.SessionResponse{
+		ID:    user.ID.String(),
+		Name:  user.Name,
+		Email: user.Email,
 	}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"batikin-be/internal/app/auth/usecase"
 	"batikin-be/internal/domain/dto"
 	"batikin-be/internal/infra/validator"
+	"batikin-be/internal/middleware"
 	"batikin-be/internal/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,6 +24,8 @@ func NewAuthHandler(
 
 	router.Post("/auth/login", handler.Login)
 	router.Post("/auth/register", handler.Register)
+
+	router.Get("/auth/session", middleware.Authenticated, handler.Session)
 }
 
 func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
@@ -94,6 +97,25 @@ func (h *AuthHandler) Register(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(
 		models.JSONResponseModel{
 			Message: "User Registered Successfully",
+		},
+	)
+}
+
+func (h *AuthHandler) Session(ctx *fiber.Ctx) error {
+	res, err := h.authUsecase.Session(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(
+			models.JSONResponseModel{
+				Message: "Invalid Request",
+				Errors:  err.Error(),
+			},
+		)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(
+		models.JSONResponseModel{
+			Message: "Session Data",
+			Data:    res,
 		},
 	)
 }

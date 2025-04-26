@@ -23,6 +23,8 @@ type Order struct {
 	Address        string  `gorm:"type:text;not null" json:"address,omitempty"`
 	Status         string  `gorm:"type:varchar(50);not null" json:"status,omitempty"`
 
+	TransactionId uuid.UUID `gorm:"type:uuid" json:"transaction_id,omitempty"`
+
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }

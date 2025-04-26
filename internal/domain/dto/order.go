@@ -11,7 +11,7 @@ type CreateOrderRequest struct {
 	Address        string `json:"address,omitempty" validate:"required"`
 }
 
-type CreateOrderResponse struct {
-	OrderDetail entity.Order `json:"order_detail,omitempty"`
-	// PaymentDetail CreateOrderRequest `json:"payment_details,omitempty"`
+type GetOrderResponse struct {
+	OrderDetail       entity.Order       `json:"order_detail,omitempty"`
+	TransactionDetail entity.Transaction `json:"payment_details,omitempty"`
 }

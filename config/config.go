@@ -24,6 +24,8 @@ type Config struct {
 
 	SupabaseURL  string `env:"SUPABASE_PROJECT_URL,required"`
 	SupbaseToken string `env:"SUPABASE_PROJECT_TOKEN,required"`
+
+	MidtransServerKey string `env:"MIDTRANS_SERVER_KEY,required"`
 }
 
 var cfg Config

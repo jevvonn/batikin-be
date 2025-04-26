@@ -14,6 +14,7 @@ func Migrate(db *gorm.DB, command string) {
 		&entity.Product{},
 		&entity.ProductSizeVariant{},
 		&entity.Order{},
+		&entity.Transaction{},
 	}
 
 	var err error

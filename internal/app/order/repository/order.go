@@ -11,6 +11,7 @@ type OrderPostgreSQLItf interface {
 	GetAllByUserId(userId uuid.UUID) ([]entity.Order, error)
 	GetSpecific(order entity.Order) (entity.Order, error)
 	Create(order *entity.Order) error
+	Update(order *entity.Order) error
 }
 
 type OrderPostgreSQL struct {
@@ -31,6 +32,10 @@ func (r *OrderPostgreSQL) GetSpecific(order entity.Order) (entity.Order, error) 
 	var result entity.Order
 	err := r.db.Preload("Product").Preload("User").Preload("SizeVariant").First(&result, &order).Error
 	return result, err
+}
+
+func (r *OrderPostgreSQL) Update(order *entity.Order) error {
+	return r.db.Where("id = ?", order.ID).Updates(&order).Error
 }
 
 func (r *OrderPostgreSQL) Create(order *entity.Order) error {

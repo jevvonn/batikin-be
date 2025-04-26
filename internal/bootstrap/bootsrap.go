@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"batikin-be/config"
+	"batikin-be/internal/infra/midtrans"
 	openaisdk "batikin-be/internal/infra/openai-sdk"
 	"batikin-be/internal/infra/postgresql"
 	"batikin-be/internal/infra/validator"
@@ -20,6 +21,7 @@ import (
 	motifRepository "batikin-be/internal/app/motif/repository"
 	orderRepository "batikin-be/internal/app/order/repository"
 	productRepository "batikin-be/internal/app/product/repository"
+	transactionRepository "batikin-be/internal/app/transaction/repository"
 	userRepository "batikin-be/internal/app/user/repository"
 
 	"github.com/gofiber/fiber/v2"
@@ -46,6 +48,7 @@ func Start() error {
 
 	validator := validator.NewValidator()
 	openAIClient := openaisdk.NewOpenAIClient()
+	midtransClient := midtrans.NewMidtransSnapClient()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Your API is running")
@@ -57,11 +60,12 @@ func Start() error {
 	motifR := motifRepository.NewMotifPostgreSQL(db)
 	productR := productRepository.NewProductPostgreSQL(db)
 	orderR := orderRepository.NewOrderPostgreSQL(db)
+	transactionR := transactionRepository.NewTransactionPostgreSQL(db)
 
 	authU := authUsecase.NewAuthUsecase(userR)
 	motifU := motifUsecase.NewMotifUsecase(motifR, openAIClient)
 	productU := productUsecase.NewProductUsecase(productR, motifR)
-	orderU := orderUsecase.NewOrderUsecase(orderR, productR)
+	orderU := orderUsecase.NewOrderUsecase(orderR, productR, midtransClient, transactionR)
 
 	authHandler.NewAuthHandler(apiRouter, authU, validator)
 	motifHandler.NewMotifHandler(apiRouter, motifU, validator)

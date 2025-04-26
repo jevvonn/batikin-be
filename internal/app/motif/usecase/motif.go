@@ -5,7 +5,11 @@ import (
 	"batikin-be/internal/domain/dto"
 	"batikin-be/internal/domain/entity"
 	"batikin-be/internal/infra/generation"
+	"batikin-be/internal/infra/supabase"
 	"fmt"
+	"io"
+	"os"
+	"path"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,6 +21,7 @@ type MotifUsecaseItf interface {
 	GetAll() ([]entity.Motif, error)
 	GetSpecific(ctx *fiber.Ctx) (entity.Motif, error)
 	Create(ctx *fiber.Ctx, req dto.CreateMotifRequest) (entity.Motif, error)
+	Capture(ctx *fiber.Ctx) (dto.CaptureMotifResponse, error)
 }
 
 type MotifUsecase struct {
@@ -94,4 +99,38 @@ func (u *MotifUsecase) Create(ctx *fiber.Ctx, req dto.CreateMotifRequest) (entit
 	}
 
 	return response, nil
+}
+
+func (u *MotifUsecase) Capture(ctx *fiber.Ctx) (dto.CaptureMotifResponse, error) {
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("file not found")
+	}
+
+	uniqueFileName := uuid.New().String() + path.Ext(file.Filename)
+	path := "./tmp/" + uniqueFileName
+
+	fileData, err := file.Open()
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to open file")
+	}
+
+	data, err := io.ReadAll(fileData)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to read file")
+	}
+
+	err = os.WriteFile(path, data, os.ModePerm)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to write file")
+	}
+
+	url, err := supabase.UploadImage("capture", uniqueFileName, path)
+	if err != nil {
+		return dto.CaptureMotifResponse{}, fmt.Errorf("failed to upload file")
+	}
+
+	return dto.CaptureMotifResponse{
+		ImageURL: url,
+	}, nil
 }

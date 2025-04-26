@@ -27,6 +27,7 @@ func NewMotifHandler(
 	router.Get("/motif", handler.GetAllMotif)
 	router.Get("/motif/:id", handler.GetSpecific)
 	router.Post("/motif", middleware.Authenticated, handler.CreateMotif)
+	router.Post("/motif/capture", middleware.Authenticated, handler.CaptureMotif)
 }
 
 func (h *MotifHandler) GetAllMotif(ctx *fiber.Ctx) error {
@@ -98,6 +99,25 @@ func (h *MotifHandler) CreateMotif(ctx *fiber.Ctx) error {
 	}
 
 	res, err := h.authUsecase.Create(ctx, req)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(
+			models.JSONResponseModel{
+				Message: "Invalid Request",
+				Errors:  err.Error(),
+			},
+		)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(
+		models.JSONResponseModel{
+			Message: "Success",
+			Data:    res,
+		},
+	)
+}
+
+func (h *MotifHandler) CaptureMotif(ctx *fiber.Ctx) error {
+	res, err := h.authUsecase.Capture(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(
 			models.JSONResponseModel{

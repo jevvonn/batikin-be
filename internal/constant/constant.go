@@ -1,7 +1,7 @@
 package constant
 
 var CLOTH_TYPE = map[string]string{
-	"kemaja": "Kemeja",
+	"kemeja": "Kemeja",
 	"outer":  "Outer",
 	"kain":   "Kain",
 }

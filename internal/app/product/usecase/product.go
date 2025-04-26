@@ -6,9 +6,11 @@ import (
 	"batikin-be/internal/constant"
 	"batikin-be/internal/domain/dto"
 	"batikin-be/internal/domain/entity"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type ProductUsecaseItf interface {
@@ -57,6 +59,21 @@ func (u *ProductUsecase) CreateFromMotif(ctx *fiber.Ctx, req dto.CreateFromMotif
 
 	typeCloth := constant.CLOTH_TYPE[req.ClothType]
 
+	checkProduct, err := u.productRepo.GetSpecific(entity.Product{
+		MotifID:   motif.ID,
+		ClothType: typeCloth,
+	})
+
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Product{}, err
+		}
+	}
+
+	if checkProduct.ID != uuid.Nil {
+		return checkProduct, nil
+	}
+
 	// Generate Gambar Kemeja,Outer, atau Kain
 
 	productId := uuid.New()
@@ -72,10 +89,12 @@ func (u *ProductUsecase) CreateFromMotif(ctx *fiber.Ctx, req dto.CreateFromMotif
 	}
 
 	product := &entity.Product{
-		ID:       productId,
-		Name:     typeCloth + " " + motif.Prompt,
-		ImageURL: motif.ImageURL,
-		Sizes:    sizes,
+		ID:        productId,
+		Name:      typeCloth + " " + motif.Prompt,
+		ImageURL:  motif.ImageURL,
+		Sizes:     sizes,
+		ClothType: typeCloth,
+		MotifID:   motif.ID,
 	}
 
 	if err := u.productRepo.Create(product); err != nil {

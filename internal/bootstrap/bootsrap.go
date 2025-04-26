@@ -3,7 +3,12 @@ package bootstrap
 import (
 	"batikin-be/config"
 	"batikin-be/internal/infra/postgresql"
+	"batikin-be/internal/infra/validator"
 	"fmt"
+
+	authHandler "batikin-be/internal/app/auth/interface/rest"
+	authUsecase "batikin-be/internal/app/auth/usecase"
+	userRepository "batikin-be/internal/app/user/repository"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,14 +25,26 @@ func Start() error {
 		conf.DbPassword,
 		conf.DbName,
 	)
-	_, err := postgresql.New(dsn)
+	db, err := postgresql.New(dsn)
 	if err != nil {
 		panic(err)
 	}
+
+	CommandHandler(db)
+
+	validator := validator.NewValidator()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Your API is running")
 	})
 
-	return app.Listen(fmt.Sprintf(":%s", conf.AppPort))
+	apiRouter := app.Group("/api")
+
+	userR := userRepository.NewUserPostgreSQL(db)
+
+	authU := authUsecase.NewAuthUsecase(userR)
+
+	authHandler.NewAuthHandler(apiRouter, authU, validator)
+
+	return app.Listen(fmt.Sprintf("localhost:%s", conf.AppPort))
 }

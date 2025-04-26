@@ -66,7 +66,7 @@ func Start() error {
 
 	authU := authUsecase.NewAuthUsecase(userR)
 	motifU := motifUsecase.NewMotifUsecase(motifR, openAIClient)
-	productU := productUsecase.NewProductUsecase(productR, motifR)
+	productU := productUsecase.NewProductUsecase(productR, motifR, openAIClient)
 	orderU := orderUsecase.NewOrderUsecase(orderR, productR, midtransClient, transactionR)
 	transactionU := transactionUsecase.NewTransactionUsecase(transactionR, orderR)
 

@@ -6,10 +6,14 @@ import (
 	"batikin-be/internal/constant"
 	"batikin-be/internal/domain/dto"
 	"batikin-be/internal/domain/entity"
+	"batikin-be/internal/helper"
+	"batikin-be/internal/infra/generation"
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/openai/openai-go"
 	"gorm.io/gorm"
 )
 
@@ -20,12 +24,17 @@ type ProductUsecaseItf interface {
 }
 
 type ProductUsecase struct {
-	productRepo repository.ProductPostgreSQLItf
-	motifRepo   motifRepo.MotifPostgreSQLItf
+	productRepo  repository.ProductPostgreSQLItf
+	motifRepo    motifRepo.MotifPostgreSQLItf
+	openAIClient openai.Client
 }
 
-func NewProductUsecase(productRepo repository.ProductPostgreSQLItf, motifRepo motifRepo.MotifPostgreSQLItf) ProductUsecaseItf {
-	return &ProductUsecase{productRepo, motifRepo}
+func NewProductUsecase(
+	productRepo repository.ProductPostgreSQLItf,
+	motifRepo motifRepo.MotifPostgreSQLItf,
+	openAIClient openai.Client,
+) ProductUsecaseItf {
+	return &ProductUsecase{productRepo, motifRepo, openAIClient}
 }
 
 func (u *ProductUsecase) GetAll() ([]entity.Product, error) {
@@ -74,8 +83,19 @@ func (u *ProductUsecase) CreateFromMotif(ctx *fiber.Ctx, req dto.CreateFromMotif
 		return checkProduct, nil
 	}
 
-	// Generate Gambar Kemeja,Outer, atau Kain
+	_, url, err := helper.FetchAndSaveImage(motif.ImageURL, "tmp")
+	if err != nil {
+		fmt.Println("Error fetching image:", err)
+		return entity.Product{}, err
+	}
 
+	prompt := fmt.Sprintf("buatkan menjadi design mockup %s tanpa orang untuk keperluan AR test-on filter", typeCloth)
+	editedURL, err := generation.GenerateImageEdit(url, prompt)
+	if err != nil {
+		return entity.Product{}, err
+	}
+
+	fmt.Println("Image URL:", editedURL)
 	productId := uuid.New()
 	sizes := []entity.ProductSizeVariant{}
 	for _, size := range constant.CLOTH_SIZE {
@@ -91,7 +111,7 @@ func (u *ProductUsecase) CreateFromMotif(ctx *fiber.Ctx, req dto.CreateFromMotif
 	product := &entity.Product{
 		ID:        productId,
 		Name:      typeCloth + " " + motif.Prompt,
-		ImageURL:  motif.ImageURL,
+		ImageURL:  editedURL,
 		Sizes:     sizes,
 		ClothType: typeCloth,
 		MotifID:   motif.ID,

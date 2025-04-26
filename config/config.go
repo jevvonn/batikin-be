@@ -18,6 +18,8 @@ type Config struct {
 	DbName     string `env:"DB_NAME,required"`
 
 	JWTSecret string `env:"JWT_SECRET,required"`
+
+	OPENAIAPIKey string `env:"OPENAI_API_KEY,required"`
 }
 
 var cfg Config

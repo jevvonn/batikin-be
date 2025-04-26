@@ -6,8 +6,10 @@ import (
 	"batikin-be/internal/infra/validator"
 	"batikin-be/internal/middleware"
 	"batikin-be/internal/models"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type MotifHandler struct {
@@ -23,6 +25,7 @@ func NewMotifHandler(
 	handler := MotifHandler{authUsecase, validator}
 
 	router.Get("/motif", handler.GetAllMotif)
+	router.Get("/motif/:id", handler.GetSpecific)
 	router.Post("/motif", middleware.Authenticated, handler.CreateMotif)
 }
 
@@ -41,6 +44,36 @@ func (h *MotifHandler) GetAllMotif(ctx *fiber.Ctx) error {
 		models.JSONResponseModel{
 			Message: "Success",
 			Data:    motifs,
+		},
+	)
+}
+
+func (h *MotifHandler) GetSpecific(ctx *fiber.Ctx) error {
+	param := ctx.Params("id")
+	_, err := uuid.Parse(param)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(
+			models.JSONResponseModel{
+				Message: "Invalid Request",
+				Errors:  fmt.Errorf("not a valid id").Error(),
+			},
+		)
+	}
+
+	motif, err := h.authUsecase.GetSpecific(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(
+			models.JSONResponseModel{
+				Message: "Invalid Request",
+				Errors:  err.Error(),
+			},
+		)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(
+		models.JSONResponseModel{
+			Message: "Success",
+			Data:    motif,
 		},
 	)
 }

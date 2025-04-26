@@ -46,5 +46,10 @@ func Start() error {
 
 	authHandler.NewAuthHandler(apiRouter, authU, validator)
 
-	return app.Listen(fmt.Sprintf("localhost:%s", conf.AppPort))
+	addr := fmt.Sprintf("localhost:%s", conf.AppPort)
+	if conf.AppEnv == "production" {
+		addr = fmt.Sprintf(":%s", conf.AppPort)
+	}
+
+	return app.Listen(addr)
 }
